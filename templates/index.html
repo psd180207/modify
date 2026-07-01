@@ -16,16 +16,49 @@
         @media (max-width: 768px) { :root { --sidebar-width: 0; } }
         body { font-family: 'Inter', sans-serif; background: #08090d; color: white; overflow: hidden; }
         h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
+        
+        /* Advanced Liquid Glassmorphism Styling */
+        .glass {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        
+        .glass-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(168, 85, 247, 0.3);
+            box-shadow: 0 12px 40px rgba(168, 85, 247, 0.15), inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px) scale(1.01);
+        }
+
         .aura-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
-        .aura-blob { position: absolute; width: 700px; height: 700px; border-radius: 50%; filter: blur(150px); opacity: 0.2; animation: float 20s infinite alternate; }
-        @keyframes float { from { transform: translate(0,0) scale(1); } to { transform: translate(10%, 10%) scale(1.1); } }
+        .aura-blob {
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            border-radius: 50%;
+            filter: blur(140px);
+            opacity: 0.25;
+            animation: float 25s infinite ease-in-out alternate;
+        }
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+            50% { transform: translate(8%, 12%) scale(1.15) rotate(180deg); }
+            100% { transform: translate(-5%, -5%) scale(0.9) rotate(360deg); }
+        }
+        
         .spinning-record { animation: spin 12s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .tab-content { transition: all 0.3s ease; }
         .hidden { display: none !important; opacity: 0; transform: translateY(10px); }
         .loader { width: 48px; height: 48px; border: 3px solid #7c3aed; border-bottom-color: transparent; border-radius: 50%; display: inline-block; box-sizing: border-box; animation: rotation 1s linear infinite; }
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
         body.player-visible main { padding-bottom: calc(var(--player-height) + 3rem); }
         body.player-visible .app-sidebar { padding-bottom: calc(var(--player-height) + 1.5rem); }
         #player-bar { left: var(--sidebar-width); min-height: var(--player-height); }
@@ -38,19 +71,23 @@
             body { flex-direction: column; }
             .app-sidebar { display: none !important; }
             .mobile-nav { display: flex !important; }
-            main { flex: 1; padding: 1rem 1rem 6rem 1rem !important; }
-            body.player-visible main { padding-bottom: calc(var(--player-height) + 7rem) !important; }
-            #player-bar { left: 0 !important; bottom: 4rem !important; border-top: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+            main { flex: 1; padding: 1rem 1rem 8rem 1rem !important; }
+            body.player-visible main { padding-bottom: 14rem !important; }
+            #player-bar { left: 0 !important; right: 0 !important; bottom: 4rem !important; border-top: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+            #player-bar.keyboard-hidden { display: none !important; }
+            .mobile-nav.keyboard-hidden { display: none !important; }
             .grid-cols-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important; gap: 1rem !important; }
             .grid-cols-2 { grid-template-columns: 1fr !important; }
             h1 { font-size: 1.5rem !important; }
             h2 { font-size: 1.75rem !important; }
             h3 { font-size: 1.25rem !important; }
         }
+        
         .mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 4rem; background: rgba(8, 9, 13, 0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.05); z-index: 60; justify-content: space-around; align-items: center; padding: 0 0.5rem; }
         .mobile-nav button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; font-size: 0.65rem; color: #64748b; transition: all 0.2s; height: 100%; border-radius: 0; min-height: 0; }
         .mobile-nav button.active { color: #a855f7; font-weight: bold; }
         .mobile-nav button span:first-child { font-size: 1.25rem; }
+        
         @media (max-width: 480px) {
             main { padding: 0.75rem !important; }
             h1 { font-size: 1.25rem !important; }
@@ -67,11 +104,26 @@
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
         
-        /* Input focus improvements */
+        /* Input focus & slider thumb improvements */
         input:focus, textarea:focus, select:focus { 
             background: rgba(255, 255, 255, 0.08) !important;
             border-color: rgba(168, 85, 247, 0.5) !important;
-            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.2) !important;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
         }
         
         /* Smooth page transitions */
@@ -85,6 +137,7 @@
     <div class="aura-bg">
         <div class="aura-blob bg-violet-800" style="top: -15%; left: -10%;"></div>
         <div class="aura-blob bg-fuchsia-900" style="bottom: -15%; right: -10%;"></div>
+        <div class="aura-blob bg-cyan-950" style="top: 40%; left: 30%; animation-duration: 35s; opacity: 0.15;"></div>
     </div>
 
     <!-- PROCESSING OVERLAY -->
@@ -425,7 +478,7 @@
     </nav>
 
     <!-- STICKY PLAYER -->
-    <div id="player-bar" class="fixed bottom-0 right-0 glass border-t border-white/10 p-3 md:p-4 transform translate-y-full transition-transform duration-500 z-50 flex items-center justify-between bg-[#08090d]/95 shadow-[0_-18px_60px_rgba(0,0,0,0.35)] w-full gap-4">
+    <div id="player-bar" class="fixed bottom-0 right-0 glass border-t border-white/10 p-3 md:p-4 transform translate-y-full transition-transform duration-500 z-50 flex items-center justify-between bg-[#08090d]/95 shadow-[0_-18px_60px_rgba(0,0,0,0.35)] gap-4">
         <!-- Left: Art & Title -->
         <div class="flex items-center gap-3 md:gap-4 min-w-0 max-w-[50%]">
             <div id="player-art" class="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center text-xl md:text-2xl shadow-lg shadow-violet-500/20 flex-shrink-0">♫</div>
@@ -970,7 +1023,7 @@
                 const adjustedScore = Math.max(0, Math.min(100, item.score + feedback));
                 
                 const resultHTML = `
-                    <div class="glass p-4 md:p-8 rounded-[1.5rem] md:rounded-[3rem] hover:bg-white/[0.05] hover:scale-[1.01] transition-all group border-white/5 hover:border-violet-500/20 animate-fade-in-up" style="animation-delay: ${(i % 10) * 0.05}s">
+                    <div class="glass glass-card p-4 md:p-8 rounded-[1.5rem] md:rounded-[3rem] group border-white/5 animate-fade-in-up" style="animation-delay: ${(i % 10) * 0.05}s">
                         <div class="flex items-center gap-3 md:gap-10 cursor-pointer w-full" onclick="playSong(${i})">
                             <div class="hidden sm:block text-2xl md:text-4xl font-black text-white/10 group-hover:text-violet-500/50 transition">#${i+1}</div>
                             <div class="w-12 h-12 md:w-20 md:h-20 glass bg-gradient-to-br from-violet-500/20 to-transparent rounded-xl md:rounded-[2rem] flex items-center justify-center text-xl md:text-3xl group-hover:rotate-12 transition group-hover:bg-violet-500/40 flex-shrink-0">♫</div>
@@ -1143,7 +1196,7 @@
                 const globalIndex = STATE.librarySongs.indexOf(song);
 
                 return `
-                <article class="glass rounded-[1.5rem] p-5 hover:bg-white/[0.05] transition-all duration-300 border-white/5 hover:border-violet-500/20 flex flex-col justify-between h-full">
+                <article class="glass glass-card rounded-[1.5rem] p-5 flex flex-col justify-between h-full">
                     <div>
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
@@ -1204,6 +1257,23 @@
             }
         }
 
+        // Hide bottom bars when keyboard is open (inputs focused) on mobile
+        function setupKeyboardAdjustments() {
+            const inputs = queryAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.addEventListener('focus', () => {
+                    if (window.innerWidth <= 768) {
+                        addClass(getElement('player-bar'), 'keyboard-hidden');
+                        addClass(document.querySelector('.mobile-nav'), 'keyboard-hidden');
+                    }
+                });
+                input.addEventListener('blur', () => {
+                    removeClass(getElement('player-bar'), 'keyboard-hidden');
+                    removeClass(document.querySelector('.mobile-nav'), 'keyboard-hidden');
+                });
+            });
+        }
+
         // ===== INITIALIZATION =====
         document.addEventListener('DOMContentLoaded', () => {
             const hash = window.location.hash.replace('#', '');
@@ -1215,6 +1285,7 @@
             }
             setupManualTuningListeners();
             loadLibrarySongs();
+            setupKeyboardAdjustments();
             
             // Prevent unwanted scrolling
             document.body.style.overflow = 'hidden';
