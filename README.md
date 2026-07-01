@@ -49,8 +49,6 @@ Face Sync requires webcam permissions. To perform emotion detection locally with
 ## Demo
 website link : https://modify-s9hc.onrender.com
 
-website interface :
-![alt text](/home/parth/projects/python cp/moodify-aura-clean/static/image.png)
+website interface : ![Website Interface](./static/image.png)
 
-website demo :
-![alt text](/home/parth/projects/python cp/moodify-aura-clean/static/image2.gif)
+website demo : ![Website Demo](./static/image2.gif)
