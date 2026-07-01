@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#08090d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Moodify Aura</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        :root { --sidebar-width: 16rem; --player-height: 104px; }
+        @media (max-width: 768px) { :root { --sidebar-width: 0; } }
+        body { font-family: 'Inter', sans-serif; background: #08090d; color: white; overflow: hidden; }
+        h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
+        .aura-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
+        .aura-blob { position: absolute; width: 700px; height: 700px; border-radius: 50%; filter: blur(150px); opacity: 0.2; animation: float 20s infinite alternate; }
+        @keyframes float { from { transform: translate(0,0) scale(1); } to { transform: translate(10%, 10%) scale(1.1); } }
+        .spinning-record { animation: spin 12s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .tab-content { transition: all 0.3s ease; }
+        .hidden { display: none !important; opacity: 0; transform: translateY(10px); }
+        .loader { width: 48px; height: 48px; border: 3px solid #7c3aed; border-bottom-color: transparent; border-radius: 50%; display: inline-block; box-sizing: border-box; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body.player-visible main { padding-bottom: calc(var(--player-height) + 3rem); }
+        body.player-visible .app-sidebar { padding-bottom: calc(var(--player-height) + 1.5rem); }
+        #player-bar { left: var(--sidebar-width); min-height: var(--player-height); }
+        #results-list { padding-bottom: calc(var(--player-height) + 2.5rem); }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-up { animation: fadeInUp 0.5s ease forwards; opacity: 0; }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .app-sidebar { display: none !important; }
+            .mobile-nav { display: flex !important; }
+            main { flex: 1; padding: 1rem 1rem 6rem 1rem !important; }
+            body.player-visible main { padding-bottom: calc(var(--player-height) + 7rem) !important; }
+            #player-bar { left: 0 !important; bottom: 4rem !important; border-top: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+            .grid-cols-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important; gap: 1rem !important; }
+            .grid-cols-2 { grid-template-columns: 1fr !important; }
+            h1 { font-size: 1.5rem !important; }
+            h2 { font-size: 1.75rem !important; }
+            h3 { font-size: 1.25rem !important; }
+        }
+        .mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 4rem; background: rgba(8, 9, 13, 0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.05); z-index: 60; justify-content: space-around; align-items: center; padding: 0 0.5rem; }
+        .mobile-nav button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; font-size: 0.65rem; color: #64748b; transition: all 0.2s; height: 100%; border-radius: 0; min-height: 0; }
+        .mobile-nav button.active { color: #a855f7; font-weight: bold; }
+        .mobile-nav button span:first-child { font-size: 1.25rem; }
+        @media (max-width: 480px) {
+            main { padding: 0.75rem !important; }
+            h1 { font-size: 1.25rem !important; }
+            h2 { font-size: 1.5rem !important; }
+        }
+        
+        /* Touch-friendly buttons */
+        button { min-height: 44px; transition: all 0.2s ease; }
+        button:active { transform: scale(0.95); }
+        
+        /* Better scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.01); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+        
+        /* Input focus improvements */
+        input:focus, textarea:focus, select:focus { 
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: rgba(168, 85, 247, 0.5) !important;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+        }
+        
+        /* Smooth page transitions */
+        @media (prefers-reduced-motion: no-preference) {
+            * { scroll-behavior: smooth; }
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <div class="aura-bg">
+        <div class="aura-blob bg-violet-800" style="top: -15%; left: -10%;"></div>
+        <div class="aura-blob bg-fuchsia-900" style="bottom: -15%; right: -10%;"></div>
+    </div>
+
+    <!-- PROCESSING OVERLAY -->
+    <div id="processing" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md hidden flex flex-col items-center justify-center gap-6" role="status" aria-live="polite">
+        <div class="w-24 h-24 rounded-full bg-violet-500/10 shadow-[0_0_60px_rgba(139,92,246,0.3)] flex items-center justify-center relative animate-pulse">
+            <div class="absolute inset-0 rounded-full border-4 border-violet-500/30 border-t-violet-400 animate-spin" style="animation-duration: 2s;"></div>
+            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-[0_0_30px_rgba(217,70,239,0.5)] animate-pulse"></div>
+        </div>
+        <p class="text-xl font-black tracking-[0.3em] text-violet-400 animate-pulse font-['Outfit']">ANALYZING AURA...</p>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="app-sidebar w-64 glass flex flex-col p-6 z-20 max-h-screen overflow-y-auto">
+        <div class="mb-8 md:mb-12">
+            <h1 class="text-2xl md:text-3xl font-extrabold tracking-tighter text-white flex items-center gap-3">
+                <span class="text-violet-500 text-2xl md:text-3xl">♫</span> 
+                <span>Moodify</span>
+            </h1>
+            <p class="text-[10px] tracking-[0.3em] font-bold text-violet-500 mt-2">AURA ENGINE PRO</p>
+        </div>
+
+        <nav class="space-y-2 md:space-y-3">
+            <button onclick="showTab('Home')" class="nav-link w-full text-left px-4 md:px-5 py-3 md:py-4 rounded-2xl transition flex items-center gap-4 text-slate-400 hover:text-white group text-sm md:text-base">
+                <span class="text-lg md:text-xl">⌂</span> <span>Home</span>
+            </button>
+            <button onclick="showTab('Manual')" class="nav-link w-full text-left px-4 md:px-5 py-3 md:py-4 rounded-2xl transition flex items-center gap-4 text-slate-400 hover:text-white group text-sm md:text-base">
+                <span class="text-lg md:text-xl">⌥</span> <span>Manual</span>
+            </button>
+            <button onclick="showTab('Prompt')" class="nav-link w-full text-left px-4 md:px-5 py-3 md:py-4 rounded-2xl transition flex items-center gap-4 text-slate-400 hover:text-white group text-sm md:text-base">
+                <span class="text-lg md:text-xl">⟡</span> <span>Prompt</span>
+            </button>
+            <button onclick="showTab('Detect')" class="nav-link w-full text-left px-4 md:px-5 py-3 md:py-4 rounded-2xl transition flex items-center gap-4 text-slate-400 hover:text-white group text-sm md:text-base">
+                <span class="text-lg md:text-xl">◎</span> <span>Detect</span>
+            </button>
+            <button onclick="showTab('Results')" class="nav-link w-full text-left px-4 md:px-5 py-3 md:py-4 rounded-2xl transition flex items-center gap-4 text-slate-400 hover:text-white group text-sm md:text-base">
+                <span class="text-lg md:text-xl">★</span> <span>Results</span>
+            </button>
+            <a href="/song-browser" class="w-full text-left px-4 md:px-5 py-3 md:py-4 rounded-2xl transition flex items-center gap-4 text-slate-400 hover:text-white hover:bg-white/5 group text-sm md:text-base">
+                <span class="text-lg md:text-xl">☷</span> <span>Library</span>
+            </a>
+        </nav>
+
+        <div class="mt-8 p-4 md:p-6 rounded-3xl bg-white/5 border border-white/5 text-center text-xs md:text-sm">
+            <p class="text-[10px] uppercase text-slate-600 font-black tracking-widest mb-2">Library Stats</p>
+            <div class="flex justify-between text-[9px] text-slate-500 font-bold mb-3 gap-2">
+                <span>{songs_cnt}<br>TRACKS</span>
+                <span>{artist_cnt}<br>ARTISTS</span>
+                <span>{genres_cnt}<br>GENRES</span>
+            </div>
+            <div class="w-full h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full"></div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 overflow-y-auto p-6 md:p-12 relative z-10 custom-scrollbar">
+        
+        <!-- HOME -->
+        <section id="Home" class="tab-content space-y-6 md:space-y-12">
+            <header class="glass p-6 md:p-12 rounded-[3rem] md:rounded-[4rem] flex flex-col md:flex-row justify-between items-start md:items-center group relative overflow-hidden gap-6 md:gap-0">
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-violet-500/10 blur-3xl rounded-full"></div>
+                <div class="space-y-4 md:space-y-6 relative z-10 flex-1">
+                    <h2 class="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.1] tracking-tighter">
+                        Music for your <br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">Deepest Aura.</span>
+                    </h2>
+                    <p class="text-slate-400 max-w-lg text-base md:text-lg">Pick a mode, describe a moment, or let the camera read the mood. We blend your feeling into a perfect soundtrack.</p>
+                    <a href="/song-browser" class="inline-flex min-h-[44px] items-center justify-center gap-3 rounded-2xl border border-violet-400/30 bg-violet-500/15 px-5 py-3 text-sm font-black uppercase tracking-[0.18em] text-violet-100 shadow-2xl shadow-violet-900/20 transition hover:border-violet-300/60 hover:bg-violet-500/25">
+                        <span>☷</span>
+                        <span>Open Library</span>
+                    </a>
+                </div>
+                
+                <div class="glass p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] bg-white/5 relative z-10 flex-shrink-0">
+                    <div class="relative w-20 md:w-28 h-20 md:h-28 flex items-center justify-center">
+                        <div class="absolute inset-0 spinning-record border-[4] md:border-[6px] border-violet-500/30 rounded-full"></div>
+                        <div class="w-3 md:w-4 h-3 md:h-4 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)]"></div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+                <div onclick="showTab('Manual')" class="glass p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] hover:bg-white/5 hover:scale-[1.02] transition-all cursor-pointer group border-white/5 hover:border-violet-500/30">
+                    <div class="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-3xl flex items-center justify-center mb-6 md:mb-8 shadow-2xl shadow-orange-500/20 text-xl md:text-2xl">⌥</div>
+                    <h3 class="text-lg md:text-2xl font-bold mb-2 md:mb-3">Manual Mix</h3>
+                    <p class="text-slate-500 text-xs md:text-sm">Fine-tune every variable to match your specific intent.</p>
+                </div>
+                <div onclick="showTab('Prompt')" class="glass p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] hover:bg-white/5 hover:scale-[1.02] transition-all cursor-pointer group border-white/5 hover:border-blue-500/30">
+                    <div class="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-3xl flex items-center justify-center mb-6 md:mb-8 shadow-2xl shadow-blue-500/20 text-xl md:text-2xl">⟡</div>
+                    <h3 class="text-lg md:text-2xl font-bold mb-2 md:mb-3">Vibe Prompt</h3>
+                    <p class="text-slate-500 text-xs md:text-sm">Type how you feel and let the engine extract the soul.</p>
+                </div>
+                <div onclick="showTab('Detect')" class="glass p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] hover:bg-white/5 hover:scale-[1.02] transition-all cursor-pointer group border-white/5 hover:border-pink-500/30">
+                    <div class="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-pink-500 to-rose-500 rounded-3xl flex items-center justify-center mb-6 md:mb-8 shadow-2xl shadow-pink-500/20 text-xl md:text-2xl">◎</div>
+                    <h3 class="text-lg md:text-2xl font-bold mb-2 md:mb-3">Face Sync</h3>
+                    <p class="text-slate-500 text-xs md:text-sm">AI analysis of your facial micro-expressions.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- MANUAL -->
+        <section id="Manual" class="tab-content hidden space-y-6 md:space-y-10">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                <div>
+                    <h2 class="text-3xl md:text-4xl font-black">Manual Mixing</h2>
+                    <p class="text-slate-500 mt-2 text-sm md:text-base">Adjust your technical preferences piece by piece.</p>
+                </div>
+                <button onclick="getManualResults()" class="bg-violet-600 hover:bg-violet-500 px-6 md:px-10 py-3 md:py-4 rounded-3xl font-black shadow-2xl shadow-violet-600/40 transition-all active:scale-95 w-full md:w-auto text-sm md:text-base">GENERATE VIBE</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
+                <div class="glass p-6 md:p-12 rounded-[2rem] md:rounded-[4rem] space-y-6 md:space-y-8">
+                    <div>
+                        <label class="block text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-3 md:mb-4">Mood Anchor</label>
+                        <div class="grid grid-cols-2 gap-3 md:gap-4">
+                            <button onclick="setMood('sad', this)" class="mood-btn glass py-3 md:py-4 rounded-2xl border-white/5 hover:border-white/20 transition-all font-bold text-sm md:text-base">Sad</button>
+                            <button onclick="setMood('happy', this)" class="mood-btn glass py-3 md:py-4 rounded-2xl border-white/5 hover:border-white/20 transition-all font-bold text-sm md:text-base">Happy</button>
+                            <button onclick="setMood('energetic', this)" class="mood-btn glass py-3 md:py-4 rounded-2xl border-white/5 hover:border-white/20 transition-all font-bold text-sm md:text-base">Energetic</button>
+                            <button onclick="setMood('calm', this)" class="mood-btn glass py-3 md:py-4 rounded-2xl border-white/5 hover:border-white/20 transition-all font-bold text-sm md:text-base">Calm</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-3 md:mb-4">Audio Profile</label>
+                        <div class="space-y-3 md:space-y-4">
+                            <div>
+                                <label class="text-[10px] text-slate-500 font-bold">Energy</label>
+                                <input type="range" id="energy" min="0" max="10" value="0" class="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-violet-500" aria-label="Energy level">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-slate-500 font-bold">Valence (Happiness)</label>
+                                <input type="range" id="valence" min="0" max="10" value="0" class="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-pink-500" aria-label="Valence level">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-slate-500 font-bold">Speed</label>
+                                <input type="range" id="speed" min="0" max="10" value="0" class="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-cyan-500" aria-label="Speed level">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-slate-500 font-bold">Danceability</label>
+                                <input type="range" id="danceability" min="0" max="10" value="0" class="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-orange-500" aria-label="Danceability level">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass p-6 md:p-12 rounded-[2rem] md:rounded-[4rem] flex flex-col space-y-4 md:space-y-6">
+                    <label class="block text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-1 md:mb-2">Context Filters</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                        <select id="genre" class="w-full glass bg-transparent p-3 md:p-4 rounded-2xl focus:outline-none focus:border-violet-500 appearance-none text-xs md:text-sm" aria-label="Genre filter">
+                            <option class="bg-slate-900 text-white" value="(optional)">Genre</option>
+                            <option class="bg-slate-900 text-white" value="bollywood">Bollywood</option>
+                            <option class="bg-slate-900 text-white" value="pop">Pop</option>
+                            <option class="bg-slate-900 text-white" value="rock">Rock</option>
+                            <option class="bg-slate-900 text-white" value="lofi">Lofi</option>
+                            <option class="bg-slate-900 text-white" value="devotional">Devotional</option>
+                        </select>
+                        <select id="time" class="w-full glass bg-transparent p-3 md:p-4 rounded-2xl focus:outline-none focus:border-violet-500 appearance-none text-xs md:text-sm" aria-label="Time of day filter">
+                            <option class="bg-slate-900 text-white" value="(optional)">Time of Day</option>
+                            <option class="bg-slate-900 text-white" value="morning">Morning</option>
+                            <option class="bg-slate-900 text-white" value="afternoon">Afternoon</option>
+                            <option class="bg-slate-900 text-white" value="evening">Evening</option>
+                            <option class="bg-slate-900 text-white" value="night">Night</option>
+                        </select>
+                        <select id="language" class="w-full glass bg-transparent p-3 md:p-4 rounded-2xl focus:outline-none focus:border-violet-500 appearance-none text-xs md:text-sm" aria-label="Language filter">
+                            <option class="bg-slate-900 text-white" value="(optional)">Language</option>
+                            <option class="bg-slate-900 text-white" value="hindi">Hindi</option>
+                            <option class="bg-slate-900 text-white" value="english">English</option>
+                            <option class="bg-slate-900 text-white" value="punjabi">Punjabi</option>
+                            <option class="bg-slate-900 text-white" value="tamil">Tamil</option>
+                            <option class="bg-slate-900 text-white" value="telugu">Telugu</option>
+                        </select>
+                        <select id="era" class="w-full glass bg-transparent p-3 md:p-4 rounded-2xl focus:outline-none focus:border-violet-500 appearance-none text-xs md:text-sm" aria-label="Era filter">
+                            <option class="bg-slate-900 text-white" value="(optional)">Era</option>
+                            <option class="bg-slate-900 text-white" value="1990s">1990s</option>
+                            <option class="bg-slate-900 text-white" value="2000s">2000s</option>
+                            <option class="bg-slate-900 text-white" value="2010s">2010s</option>
+                            <option class="bg-slate-900 text-white" value="2020s">2020s</option>
+                        </select>
+                        <select id="context" class="w-full glass bg-transparent p-3 md:p-4 rounded-2xl focus:outline-none focus:border-violet-500 appearance-none text-xs md:text-sm" aria-label="Context filter">
+                            <option class="bg-slate-900 text-white" value="(optional)">Context</option>
+                            <option class="bg-slate-900 text-white" value="heartbreak">Heartbreak</option>
+                            <option class="bg-slate-900 text-white" value="late-night">Late Night</option>
+                            <option class="bg-slate-900 text-white" value="long-drive">Long Drive</option>
+                            <option value="party">Party</option>
+                            <option value="workout">Workout</option>
+                        </select>
+                        <select id="activity" class="w-full glass bg-transparent p-3 md:p-4 rounded-2xl focus:outline-none focus:border-violet-500 appearance-none text-xs md:text-sm" aria-label="Activity filter">
+                            <option value="(optional)">Activity</option>
+                            <option value="study">Study</option>
+                            <option value="gym">Gym</option>
+                            <option value="dance">Dance</option>
+                            <option value="travel">Travel</option>
+                            <option value="sleep">Sleep</option>
+                        </select>
+                    </div>
+                    <input id="artist" type="text" placeholder="Artist Name..." class="w-full glass bg-transparent p-3 md:p-4 rounded-2xl focus:outline-none focus:border-violet-500 placeholder:text-slate-600 text-xs md:text-sm" aria-label="Artist name filter">
+                </div>
+            </div>
+        </section>
+
+        <!-- PROMPT -->
+        <section id="Prompt" class="tab-content hidden space-y-8 md:space-y-12">
+            <div class="text-center space-y-4 md:space-y-6 pt-6 md:pt-12">
+                <h2 class="text-3xl md:text-5xl font-black">What's the vibe?</h2>
+                <p class="text-slate-400 text-sm md:text-lg">Describe a moment, a memory, or a setting.</p>
+            </div>
+            
+            <div class="max-w-4xl mx-auto relative group">
+                <textarea id="prompt-input" class="w-full h-40 md:h-64 glass bg-white/5 p-6 md:p-10 rounded-[2rem] md:rounded-[4rem] text-lg md:text-2xl focus:outline-none focus:border-violet-500/50 transition-all resize-none shadow-2xl placeholder:text-slate-700 text-base md:text-xl" placeholder='e.g. "Sad Hindi breakup songs from the 90s for a rainy night study session"' aria-label="Vibe description"></textarea>
+                <button onclick="getPromptResults()" class="absolute bottom-4 md:bottom-10 right-4 md:right-10 w-16 md:w-20 h-16 md:h-20 bg-violet-600 rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center shadow-2xl shadow-violet-600/40 hover:scale-110 transition active:scale-95 text-2xl md:text-3xl" aria-label="Get vibe recommendations">⟡</button>
+            </div>
+        </section>
+
+        <!-- DETECT -->
+        <section id="Detect" class="tab-content hidden flex flex-col items-center justify-center space-y-6 md:space-y-12 pt-6 md:pt-12 text-center">
+            <div class="space-y-4 md:space-y-6">
+                <h2 class="text-3xl md:text-5xl font-black">Face Sync</h2>
+                <p class="text-slate-400 text-sm md:text-lg">Let Moodify read your expression through the webcam.</p>
+            </div>
+            
+            <div class="glass p-6 md:p-10 rounded-[2rem] md:rounded-[4rem] max-w-3xl space-y-6 md:space-y-8 group hover:border-pink-500/20 transition-all w-full">
+                <div class="relative overflow-hidden rounded-[1.5rem] md:rounded-[3rem] bg-black/40 border border-white/10 aspect-video">
+                    <video id="face-video" class="absolute inset-0 w-full h-full object-cover scale-x-[-1]" autoplay playsinline muted></video>
+                    <canvas id="face-overlay" class="absolute inset-0 w-full h-full"></canvas>
+                    <canvas id="face-canvas" class="hidden"></canvas>
+                    <div id="face-camera-empty" class="absolute inset-0 flex flex-col items-center justify-center gap-4 text-slate-500">
+                        <div class="w-16 md:w-24 h-16 md:h-24 bg-pink-500/10 rounded-full flex items-center justify-center text-4xl md:text-5xl">◎</div>
+                        <p class="text-xs md:text-base">Live emotion preview appears here.</p>
+                    </div>
+                    <div id="face-status" class="absolute left-3 md:left-5 bottom-3 md:bottom-5 rounded-2xl bg-black/60 px-3 md:px-5 py-2 md:py-3 text-xs md:text-sm text-pink-100 border border-pink-500/20">Ready</div>
+                </div>
+                <input id="face-extra" type="text" placeholder="Optional context (e.g. 'hindi 90s')" class="w-full glass bg-transparent p-3 md:p-4 rounded-2xl focus:outline-none focus:border-pink-500 placeholder:text-slate-600 text-center text-xs md:text-lg" aria-label="Additional face recognition context">
+                <div class="flex flex-col sm:flex-row flex-wrap justify-center gap-2 md:gap-4">
+                    <button id="camera-toggle-btn" onclick="toggleFaceCamera()" class="bg-pink-600 hover:bg-pink-500 px-6 md:px-10 py-4 md:py-5 rounded-[1.5rem] md:rounded-[2rem] font-bold md:font-black shadow-2xl shadow-pink-600/30 transition-all active:scale-95 tracking-widest flex items-center justify-center gap-2 text-sm md:text-base flex-1 sm:flex-none"><span>📹</span> <span class="hidden sm:inline">START</span> CAMERA</button>
+                    <button id="pause-resume-btn" onclick="togglePauseCamera()" class="bg-white/5 hover:bg-white/10 px-6 md:px-8 py-4 md:py-5 rounded-[1.5rem] md:rounded-[2rem] font-bold text-slate-300 transition-all active:scale-95 border border-white/10 hidden flex items-center justify-center gap-2 text-sm md:text-base flex-1 sm:flex-none"><span>⏸</span> <span class="hidden sm:inline">Pause</span></button>
+                    <button onclick="getFaceResults()" class="bg-white/5 hover:bg-white/10 px-6 md:px-10 py-4 md:py-5 rounded-[1.5rem] md:rounded-[2rem] font-bold md:font-black transition-all active:scale-95 tracking-widest border border-white/10 text-sm md:text-base flex-1 sm:flex-none">USE EMOTION</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- RESULTS -->
+        <section id="Results" class="tab-content hidden space-y-6 md:space-y-10">
+            <h2 class="text-3xl md:text-4xl font-black">Top Aura <span class="text-violet-400">Matches</span></h2>
+            <div id="results-list" class="space-y-3 md:space-y-5">
+                <!-- Dynamic Results -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MOBILE BOTTOM NAV -->
+    <nav class="mobile-nav">
+        <button onclick="showTab('Home')" class="nav-btn active" data-tab="Home">
+            <span>⌂</span>
+            <span>Home</span>
+        </button>
+        <button onclick="showTab('Manual')" class="nav-btn" data-tab="Manual">
+            <span>⌥</span>
+            <span>Manual</span>
+        </button>
+        <button onclick="showTab('Prompt')" class="nav-btn" data-tab="Prompt">
+            <span>⟡</span>
+            <span>Prompt</span>
+        </button>
+        <button onclick="showTab('Detect')" class="nav-btn" data-tab="Detect">
+            <span>◎</span>
+            <span>Detect</span>
+        </button>
+        <button onclick="showTab('Results')" class="nav-btn" data-tab="Results">
+            <span>★</span>
+            <span>Results</span>
+        </button>
+        <button onclick="window.location.href='/song-browser'" class="nav-btn" data-tab="Library">
+            <span>☷</span>
+            <span>Library</span>
+        </button>
+    </nav>
+
+    <!-- STICKY PLAYER -->
+    <div id="player-bar" class="fixed bottom-0 right-0 glass border-t border-white/10 p-3 md:p-4 transform translate-y-full transition-transform duration-500 z-50 flex flex-col sm:flex-row items-center justify-between bg-[#08090d]/95 shadow-[0_-18px_60px_rgba(0,0,0,0.35)] w-full gap-3 md:gap-0">
+        <div class="flex items-center gap-3 md:gap-4 w-full sm:w-1/3 min-w-0">
+            <div id="player-art" class="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center text-xl md:text-2xl shadow-lg shadow-violet-500/20 flex-shrink-0">♫</div>
+            <div class="overflow-hidden whitespace-nowrap flex-1 min-w-0">
+                <h4 id="player-title" class="font-bold text-sm md:text-lg truncate">No Song</h4>
+                <p id="player-artist" class="text-xs md:text-sm text-slate-400 truncate">-</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3 md:gap-6 justify-center w-full sm:w-1/3">
+            <button onclick="prevSong()" class="text-2xl md:text-3xl text-slate-400 hover:text-white transition active:scale-90">⏮</button>
+            <div class="text-[10px] font-black tracking-[0.2em] text-violet-400 opacity-80 uppercase px-3 md:px-4 py-2 border border-violet-500/20 rounded-full bg-violet-500/10 whitespace-nowrap text-xs">Popup Player</div>
+            <button onclick="nextSong()" class="text-2xl md:text-3xl text-slate-400 hover:text-white transition active:scale-90">⏭</button>
+        </div>
+        <div class="w-full sm:w-1/3 flex justify-end items-center pr-0 sm:pr-4 gap-2 md:gap-4">
+             <a id="yt-link-btn" href="#" target="_blank" class="hidden w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center hover:bg-violet-600 transition shadow-xl text-xl" title="Open in YouTube Music">🔗</a>
+             <div class="text-[10px] uppercase text-slate-500 font-black tracking-widest hidden md:block">Aura Queue</div>
+        </div>
+    </div>
+
+    <script>
+        // ===== STATE MANAGEMENT =====
+        const STATE = {
+            currentMood: "",
+            currentPlaylist: [],
+            currentSongIndex: 0,
+            currentlyShowing: 5,
+            popupPlayer: null,
+            faceStream: null,
+            faceLiveTimer: null,
+            latestFacePayload: null,
+            isCameraRunning: false,
+            isLiveLoopRunning: false,
+            feedbackScores: {},
+        };
+
+        const CONFIG = {
+            INITIAL_RESULT_LIMIT: 5,
+            RESULT_STEP: 5,
+            LIVE_EMOTION_INTERVAL: 1200,
+            DEBOUNCE_DELAY: 300,
+        };
+
+        // ===== UTILITIES =====
+        function songKey(song) {
+            return `${song.title}::${song.artists.join('|')}`;
+        }
+
+        function escapeHtml(value) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+            return String(value ?? '').replace(/[&<>"']/g, c => map[c]);
+        }
+
+        function formatPercent(value) {
+            return `${Math.round(Number(value) * 100)}%`;
+        }
+
+        function debounce(func, delay) {
+            let timeoutId;
+            return function(...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // ===== DOM HELPERS =====
+        function getElement(id) {
+            return document.getElementById(id);
+        }
+
+        function queryAll(selector) {
+            return document.querySelectorAll(selector);
+        }
+
+        function addClass(el, ...classes) {
+            if (el) el.classList.add(...classes);
+        }
+
+        function removeClass(el, ...classes) {
+            if (el) el.classList.remove(...classes);
+        }
+
+        function toggleClass(el, className) {
+            if (el) el.classList.toggle(className);
+        }
+
+        function setHTML(el, html) {
+            if (el) el.innerHTML = html;
+        }
+
+        function setText(el, text) {
+            if (el) el.textContent = text;
+        }
+
+        // ===== SCORE CALCULATION =====
+        function formatBreakdown(breakdown) {
+            if (!breakdown) return '<div class="text-slate-500">No score details available.</div>';
+            const labels = {
+                emotion: 'Emotion', energy: 'Energy', valence: 'Mood tone', speed: 'Speed',
+                danceability: 'Dance', time: 'Time', genre: 'Genre', language: 'Language',
+                context: 'Context', activity: 'Activity', era: 'Era', artist: 'Artist',
+                popularity: 'Popularity', artist_bonus: 'Artist bonus'
+            };
+            return Object.entries(labels)
+                .filter(([key]) => breakdown[key] !== null && breakdown[key] !== undefined)
+                .map(([key, label]) => `
+                    <div class="flex items-center justify-between gap-4 rounded-xl bg-white/[0.03] px-4 py-3">
+                        <span class="text-slate-400 text-xs md:text-sm">${label}</span>
+                        <span class="font-black text-violet-200 text-xs md:text-sm">${formatPercent(breakdown[key])}</span>
+                    </div>
+                `).join('') || '<div class="text-slate-500">No active matching fields.</div>';
+        }
+
+        // ===== PLAYLIST MANAGEMENT =====
+        function sortPlaylist() {
+            STATE.currentPlaylist.sort((a, b) => {
+                const scoreA = a.score + (STATE.feedbackScores[songKey(a.song)] || 0);
+                const scoreB = b.score + (STATE.feedbackScores[songKey(b.song)] || 0);
+                return scoreB - scoreA;
+            });
+        }
+
+        function playSong(index) {
+            if (index < 0 || index >= STATE.currentPlaylist.length) return;
+            STATE.currentSongIndex = index;
+            const item = STATE.currentPlaylist[index];
+            const song = item.song;
+            
+            document.body.classList.add('player-visible');
+            removeClass(getElement('player-bar'), 'translate-y-full');
+            setText(getElement('player-title'), song.title);
+            setText(getElement('player-artist'), song.artists.join(', '));
+            
+            const ytBtn = getElement('yt-link-btn');
+            if (song.yt_music_link) {
+                ytBtn.href = song.yt_music_link;
+                removeClass(ytBtn, 'hidden');
+                
+                // Calculate dimensions for right-side snapping
+                const w = Math.floor(screen.availWidth * 0.45); // 45% width for YT music
+                const h = screen.availHeight;
+                const left = screen.availWidth - w;
+                const top = 0;
+                
+                // Try to resize the main window to take the left 55%
+                try {
+                    window.resizeTo(screen.availWidth - w, screen.availHeight);
+                    window.moveTo(0, 0);
+                } catch(e) {}
+                
+                if (STATE.popupPlayer && !STATE.popupPlayer.closed) {
+                    STATE.popupPlayer.location.href = song.yt_music_link;
+                    STATE.popupPlayer.focus();
+                } else {
+                    STATE.popupPlayer = window.open(song.yt_music_link, "MoodifyPlayer", `width=${w},height=${h},left=${left},top=${top}`);
+                }
+            } else {
+                addClass(ytBtn, 'hidden');
+                alert("No YouTube Music link available for this song.");
+            }
+        }
+
+        function nextSong() {
+            if (STATE.currentSongIndex < STATE.currentPlaylist.length - 1) {
+                playSong(STATE.currentSongIndex + 1);
+            }
+        }
+
+        function prevSong() {
+            if (STATE.currentSongIndex > 0) {
+                playSong(STATE.currentSongIndex - 1);
+            }
+        }
+
+        // ===== TAB NAVIGATION =====
+        function showTab(tabId) {
+            // Close camera when leaving Detect tab
+            if (tabId !== 'Detect' && STATE.isCameraRunning) {
+                closeCameraStream();
+                STATE.isCameraRunning = false;
+                const btn = getElement('camera-toggle-btn');
+                const pauseBtn = getElement('pause-resume-btn');
+                setHTML(btn, '<span>📹</span> <span class="hidden sm:inline">START</span> CAMERA');
+                removeClass(btn, 'bg-pink-500');
+                addClass(btn, 'bg-pink-600');
+                addClass(pauseBtn, 'hidden');
+            }
+            
+            queryAll('.tab-content').forEach(t => addClass(t, 'hidden'));
+            queryAll('.nav-link').forEach(l => {
+                removeClass(l, 'bg-white/5', 'text-white');
+            });
+            
+            const tab = getElement(tabId);
+            removeClass(tab, 'hidden');
+            
+            // Highlight nav link
+            queryAll('.nav-link').forEach(l => {
+                if (l.innerText.includes(tabId)) {
+                    addClass(l, 'bg-white/5', 'text-white');
+                }
+            });
+            
+            // Highlight mobile nav link
+            queryAll('.nav-btn').forEach(btn => removeClass(btn, 'active'));
+            queryAll('.nav-btn').forEach(btn => {
+                if (btn.dataset.tab === tabId) {
+                    addClass(btn, 'active');
+                }
+            });
+        }
+
+        function setMood(mood, el) {
+            STATE.currentMood = mood;
+            queryAll('.mood-btn').forEach(b => removeClass(b, 'bg-violet-600', 'text-white', 'shadow-2xl', 'shadow-violet-600/30'));
+            addClass(el, 'bg-violet-600', 'text-white', 'shadow-2xl', 'shadow-violet-600/30');
+        }
+
+        // ===== API CALLS =====
+        async function post(url, body) {
+            removeClass(getElement('processing'), 'hidden');
+            try {
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const results = await resp.json();
+                renderResults(results);
+            } catch (error) {
+                console.error('API Error:', error);
+                alert('Error fetching recommendations. Please try again.');
+            } finally {
+                addClass(getElement('processing'), 'hidden');
+            }
+        }
+
+        function getManualResults() {
+            post('/recommend/manual', {
+                emotion: STATE.currentMood,
+                energy: parseFloat(getElement('energy').value),
+                valence: parseFloat(getElement('valence').value),
+                speed: parseFloat(getElement('speed').value),
+                danceability: parseFloat(getElement('danceability').value),
+                genre: getElement('genre').value,
+                time: getElement('time').value,
+                language: getElement('language').value,
+                era: getElement('era').value,
+                context: getElement('context').value,
+                activity: getElement('activity').value,
+                artist: getElement('artist').value
+            });
+        }
+
+        function getPromptResults() {
+            const prompt = getElement('prompt-input').value.trim();
+            if (!prompt) {
+                alert('Please describe your mood or moment!');
+                return;
+            }
+            post('/recommend/prompt', { prompt });
+        }
+
+        // ===== CAMERA & FACE DETECTION (using face-api.js) =====
+        let modelsLoaded = false;
+
+        function setFaceStatus(message) {
+            setText(getElement('face-status'), message);
+        }
+
+        async function loadFaceApiModels() {
+            if (modelsLoaded) return;
+            setFaceStatus('Loading AI models...');
+            const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+            try {
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL)
+                ]);
+                modelsLoaded = true;
+                setFaceStatus('AI models loaded');
+            } catch (err) {
+                console.error('Error loading face-api models:', err);
+                setFaceStatus('Error loading AI models');
+                throw err;
+            }
+        }
+
+        function stopLiveEmotionLoop() {
+            if (STATE.faceLiveTimer) {
+                clearInterval(STATE.faceLiveTimer);
+                STATE.faceLiveTimer = null;
+                STATE.isLiveLoopRunning = false;
+            }
+        }
+
+        function closeCameraStream() {
+            stopLiveEmotionLoop();
+            if (STATE.faceStream) {
+                STATE.faceStream.getTracks().forEach(track => track.stop());
+                STATE.faceStream = null;
+            }
+            getElement('face-video').srcObject = null;
+            const overlay = getElement('face-overlay');
+            const ctx = overlay.getContext('2d');
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+        }
+
+        function pauseCamera() {
+            stopLiveEmotionLoop();
+            const overlay = getElement('face-overlay');
+            const ctx = overlay.getContext('2d');
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            setFaceStatus('Paused - click Resume to continue');
+        }
+
+        function togglePauseCamera() {
+            const btn = getElement('pause-resume-btn');
+            if (STATE.isLiveLoopRunning) {
+                pauseCamera();
+                setHTML(btn, '<span>▶</span> Resume');
+            } else {
+                startLiveEmotionLoop();
+                setHTML(btn, '<span>⏸</span> Pause');
+            }
+        }
+
+        async function toggleFaceCamera() {
+            const btn = getElement('camera-toggle-btn');
+            const pauseBtn = getElement('pause-resume-btn');
+            
+            if (STATE.isCameraRunning) {
+                closeCameraStream();
+                STATE.isCameraRunning = false;
+                setHTML(btn, '<span>📹</span> <span class="hidden sm:inline">START</span> CAMERA');
+                removeClass(btn, 'bg-pink-500');
+                addClass(btn, 'bg-pink-600');
+                addClass(pauseBtn, 'hidden');
+                setFaceStatus('Camera closed');
+            } else {
+                await startFaceCamera();
+            }
+        }
+
+        async function startFaceCamera() {
+            const video = getElement('face-video');
+            const empty = getElement('face-camera-empty');
+            const pauseBtn = getElement('pause-resume-btn');
+            try {
+                if (!modelsLoaded) {
+                    await loadFaceApiModels();
+                }
+                if (!STATE.faceStream) {
+                    STATE.faceStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'user', width: { ideal: 960 }, height: { ideal: 540 } },
+                        audio: false
+                    });
+                }
+                video.srcObject = STATE.faceStream;
+                addClass(empty, 'hidden');
+                STATE.isCameraRunning = true;
+                const btn = getElement('camera-toggle-btn');
+                setHTML(btn, '<span>📹</span> <span class="hidden sm:inline">STOP</span> CAMERA');
+                removeClass(btn, 'bg-pink-600');
+                addClass(btn, 'bg-pink-500');
+                removeClass(pauseBtn, 'hidden');
+                setHTML(pauseBtn, '<span>⏸</span> Pause');
+                setFaceStatus('Looking for a face...');
+                startLiveEmotionLoop();
+            } catch (err) {
+                setFaceStatus('Initialization failed');
+                alert(`Camera/Model initialization failed: ${err.message}`);
+                STATE.isCameraRunning = false;
+            }
+        }
+
+        function drawFaceIndicator(payload) {
+            const video = getElement('face-video');
+            const canvas = getElement('face-overlay');
+            const bounds = video.getBoundingClientRect();
+            canvas.width = Math.max(1, Math.round(bounds.width));
+            canvas.height = Math.max(1, Math.round(bounds.height));
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!payload || !payload.region) return;
+
+            const region = payload.region;
+            const x = (1 - region.x - region.w) * canvas.width;
+            const y = region.y * canvas.height;
+            const w = region.w * canvas.width;
+            const h = region.h * canvas.height;
+            const label = `${payload.emotion} (${payload.confidence}%)`;
+
+            ctx.strokeStyle = '#22ff44';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(x, y, w, h);
+            ctx.font = '700 26px Inter, sans-serif';
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+            ctx.strokeText(label, x, Math.max(32, y - 12));
+            ctx.fillStyle = '#22ff44';
+            ctx.fillText(label, x, Math.max(32, y - 12));
+        }
+
+        async function sampleLiveEmotion() {
+            const video = getElement('face-video');
+            if (!video.srcObject || video.readyState < 2) return;
+            try {
+                const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+                const detection = await faceapi.detectSingleFace(video, options)
+                                               .withFaceLandmarks()
+                                               .withFaceExpressions();
+                if (!detection) {
+                    setFaceStatus('No face detected yet');
+                    drawFaceIndicator(null);
+                    return;
+                }
+
+                let dominantEmotion = 'neutral';
+                let maxConfidence = 0.0;
+                if (detection.expressions) {
+                    for (const [emotion, confidence] of Object.entries(detection.expressions)) {
+                        if (confidence > maxConfidence) {
+                            maxConfidence = confidence;
+                            dominantEmotion = emotion;
+                        }
+                    }
+                }
+
+                const EMOTION_MAP = {
+                    "happy": "happy",
+                    "sad": "sad",
+                    "angry": "angry",
+                    "fearful": "angry",
+                    "surprised": "energetic",
+                    "neutral": "calm",
+                    "disgusted": "angry"
+                };
+
+                const mappedEmotion = EMOTION_MAP[dominantEmotion] || 'calm';
+                const confidencePercent = Math.round(maxConfidence * 100);
+
+                const box = detection.detection.box;
+                const region = {
+                    x: box.x / box.imageWidth,
+                    y: box.y / box.imageHeight,
+                    w: box.width / box.imageWidth,
+                    h: box.height / box.imageHeight
+                };
+
+                const payload = {
+                    emotion: mappedEmotion,
+                    raw_emotion: dominantEmotion,
+                    confidence: confidencePercent,
+                    region: region
+                };
+
+                STATE.latestFacePayload = payload;
+                setFaceStatus(`Detected ${payload.emotion} (${payload.confidence}%)`);
+                drawFaceIndicator(payload);
+            } catch (err) {
+                console.error('Live emotion detection error:', err);
+            }
+        }
+
+        function startLiveEmotionLoop() {
+            if (STATE.faceLiveTimer || STATE.isLiveLoopRunning) return;
+            STATE.isLiveLoopRunning = true;
+            sampleLiveEmotion();
+            STATE.faceLiveTimer = setInterval(sampleLiveEmotion, CONFIG.LIVE_EMOTION_INTERVAL);
+        }
+
+        async function getFaceResults() {
+            if (!STATE.faceStream) {
+                await startFaceCamera();
+            }
+            if (!STATE.latestFacePayload) {
+                setFaceStatus('Looking for a face...');
+                return;
+            }
+
+            removeClass(getElement('processing'), 'hidden');
+            const extra = getElement('face-extra').value;
+            try {
+                const resp = await fetch('/recommend/face-browser', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        emotion: STATE.latestFacePayload.emotion,
+                        raw_emotion: STATE.latestFacePayload.raw_emotion,
+                        confidence: STATE.latestFacePayload.confidence,
+                        region: STATE.latestFacePayload.region,
+                        extra: extra
+                    })
+                });
+                const payload = await resp.json();
+                if (!resp.ok) {
+                    setFaceStatus(payload.error || 'Face scan failed');
+                    alert(payload.error || 'Face scan failed.');
+                    return;
+                }
+                STATE.latestFacePayload = payload;
+                drawFaceIndicator(payload);
+                setFaceStatus(`Using ${payload.emotion} (${payload.confidence}%)`);
+                renderResults(payload.results);
+                
+                // Auto-pause after getting results
+                setTimeout(() => {
+                    pauseCamera();
+                    setHTML(getElement('pause-resume-btn'), '<span>▶</span> Resume');
+                }, 1000);
+            } catch (error) {
+                console.error('Face recognition error:', error);
+                alert('Error processing face recognition.');
+            } finally {
+                addClass(getElement('processing'), 'hidden');
+            }
+        }
+
+        // ===== RESULTS RENDERING =====
+        function renderResults(results) {
+            STATE.currentPlaylist = results;
+            STATE.currentlyShowing = CONFIG.INITIAL_RESULT_LIMIT;
+            sortPlaylist();
+            renderList(STATE.currentPlaylist, STATE.currentlyShowing);
+            showTab('Results');
+        }
+
+        function renderList(results, limit) {
+            const list = getElement('results-list');
+            setHTML(list, "");
+            
+            if (results.length === 0) {
+                setHTML(list, '<div class="glass p-12 md:p-20 rounded-[2rem] md:rounded-[3rem] text-center opacity-30 italic text-sm md:text-base">No songs found matching this aura.</div>');
+                return;
+            }
+
+            setHTML(list, `<button onclick="playSong(0)" class="mb-6 md:mb-8 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 px-6 md:px-8 py-3 md:py-4 rounded-[1.5rem] md:rounded-[2rem] font-black tracking-widest text-xs md:text-sm uppercase shadow-xl shadow-violet-600/30 transition-all active:scale-95 flex items-center justify-center gap-2 w-full md:w-auto"><span class="text-lg md:text-xl">▶</span> PLAY VIBE MIX</button>`);
+
+            const itemsToShow = results.slice(0, limit);
+            itemsToShow.forEach((item, i) => {
+                const song = item.song;
+                const feedback = STATE.feedbackScores[songKey(song)] || 0;
+                const adjustedScore = Math.max(0, Math.min(100, item.score + feedback));
+                
+                const resultHTML = `
+                    <div class="glass p-4 md:p-8 rounded-[1.5rem] md:rounded-[3rem] hover:bg-white/[0.05] hover:scale-[1.01] transition-all group border-white/5 hover:border-violet-500/20 animate-fade-in-up" style="animation-delay: ${(i % 10) * 0.05}s">
+                        <div class="flex items-center gap-4 md:gap-10 cursor-pointer flex-col sm:flex-row" onclick="playSong(${i})">
+                            <div class="text-2xl md:text-4xl font-black text-white/10 group-hover:text-violet-500/50 transition">#${i+1}</div>
+                            <div class="w-16 md:w-20 h-16 md:h-20 glass bg-gradient-to-br from-violet-500/20 to-transparent rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center text-2xl md:text-3xl group-hover:rotate-12 transition group-hover:bg-violet-500/40 flex-shrink-0">♫</div>
+                            <div class="flex-1 min-w-0 text-center sm:text-left">
+                                <h4 class="text-lg md:text-2xl font-bold tracking-tight truncate">${escapeHtml(song.title)}</h4>
+                                <p class="text-slate-400 mt-1 truncate text-xs md:text-base">${escapeHtml(song.artists.join(', '))} • <span class="text-violet-400/80">${escapeHtml(song.genre)}</span></p>
+                            </div>
+                            <div class="text-right mr-0 sm:mr-4 w-full sm:w-auto">
+                                <div class="text-2xl md:text-3xl font-black text-emerald-400">${adjustedScore}%</div>
+                                <div class="text-[10px] uppercase text-slate-500 font-black tracking-widest mt-1">${feedback ? 'Tuned' : 'Match'}</div>
+                            </div>
+                            <button class="w-14 md:w-16 h-14 md:h-16 bg-white/5 rounded-2xl flex items-center justify-center group-hover:bg-violet-600 transition shadow-xl active:scale-90 text-lg md:text-xl pointer-events-none flex-shrink-0">▶</button>
+                        </div>
+                        <div class="mt-4 md:mt-6 flex flex-wrap items-center gap-2 md:gap-3 pl-0 sm:pl-0 md:pl-36">
+                            <button onclick="toggleBreakdown(${i})" class="px-4 md:px-5 py-2 md:py-3 rounded-2xl bg-white/5 hover:bg-violet-600/30 text-xs md:text-sm font-bold text-slate-300 hover:text-white transition">Why?</button>
+                            <button onclick="sendFeedback(${i}, 1)" class="w-10 md:w-12 h-10 md:h-12 rounded-2xl bg-white/5 hover:bg-emerald-500/20 text-base md:text-lg transition" title="More like this">👍</button>
+                            <button onclick="sendFeedback(${i}, -1)" class="w-10 md:w-12 h-10 md:h-12 rounded-2xl bg-white/5 hover:bg-rose-500/20 text-base md:text-lg transition" title="Less like this">👎</button>
+                            <span class="text-xs uppercase tracking-[0.2em] text-slate-600 font-black">${feedback > 0 ? 'Boosted' : feedback < 0 ? 'Lowered' : ''}</span>
+                        </div>
+                        <div id="breakdown-${i}" class="hidden mt-5 ml-0 md:ml-36 grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 text-sm">
+                            ${formatBreakdown(item.breakdown)}
+                        </div>
+                    </div>
+                `;
+                
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = resultHTML;
+                list.appendChild(tempDiv.firstElementChild);
+            });
+
+            if (limit < results.length) {
+                const showMoreHTML = `
+                    <button onclick="showMoreResults()" class="w-full mt-6 md:mt-8 glass hover:bg-white/5 py-4 md:py-5 rounded-[1.5rem] md:rounded-[2rem] font-bold text-slate-300 hover:text-white transition-all active:scale-[0.98] border border-white/5 hover:border-white/20 text-sm md:text-base">
+                        SHOW ${Math.min(CONFIG.RESULT_STEP, results.length - limit)} MORE VIBES ↓
+                    </button>
+                `;
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = showMoreHTML;
+                list.appendChild(tempDiv.firstElementChild);
+            }
+        }
+
+        function showMoreResults() {
+            STATE.currentlyShowing += CONFIG.RESULT_STEP;
+            renderList(STATE.currentPlaylist, STATE.currentlyShowing);
+        }
+
+        function toggleBreakdown(index) {
+            toggleClass(getElement(`breakdown-${index}`), 'hidden');
+        }
+
+        function sendFeedback(index, direction) {
+            const item = STATE.currentPlaylist[index];
+            if (!item) return;
+            STATE.feedbackScores[songKey(item.song)] = direction > 0 ? 8 : -12;
+            sortPlaylist();
+            renderList(STATE.currentPlaylist, STATE.currentlyShowing);
+        }
+
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', () => {
+            showTab('Home');
+            
+            // Prevent unwanted scrolling
+            document.body.style.overflow = 'hidden';
+        });
+    </script>
+</body>
+</html>
