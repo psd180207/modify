@@ -10,6 +10,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/static/logo.jpeg">
+    <meta name="apple-mobile-web-app-title" content="Moodify Aura">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registered:', reg.scope))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
+    </script>
     <style>
         * { -webkit-tap-highlight-color: transparent; }
         :root { --sidebar-width: 16rem; --player-height: 104px; }
@@ -154,7 +166,7 @@
     <aside class="app-sidebar w-64 glass flex flex-col p-6 z-20 max-h-screen overflow-y-auto">
         <div class="mb-8 md:mb-12">
             <h1 class="text-2xl md:text-3xl font-extrabold tracking-tighter text-white flex items-center gap-3">
-                <span class="text-violet-500 text-2xl md:text-3xl">♫</span> 
+                <img src="/static/logo.jpeg" alt="Moodify Logo" class="w-8 h-8 md:w-10 md:h-10 rounded-full border border-violet-500/30 object-cover flex-shrink-0">
                 <span>Moodify</span>
             </h1>
             <p class="text-[10px] tracking-[0.3em] font-bold text-violet-500 mt-2">AURA ENGINE PRO</p>
@@ -482,7 +494,9 @@
     <div id="player-bar" class="fixed bottom-0 right-0 glass border-t border-white/10 p-3 md:p-4 transform translate-y-full transition-transform duration-500 z-50 flex items-center justify-between bg-[#08090d]/95 shadow-[0_-18px_60px_rgba(0,0,0,0.35)] gap-4">
         <!-- Left: Art & Title -->
         <div class="flex items-center gap-3 md:gap-4 min-w-0 max-w-[50%]">
-            <div id="player-art" class="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center text-xl md:text-2xl shadow-lg shadow-violet-500/20 flex-shrink-0">♫</div>
+            <div id="player-art" class="w-12 h-12 md:w-16 md:h-16 rounded-xl overflow-hidden flex-shrink-0 shadow-lg shadow-violet-500/20">
+                <img src="/static/logo.jpeg" alt="Song Art" class="w-full h-full object-cover">
+            </div>
             <div class="overflow-hidden whitespace-nowrap min-w-0">
                 <h4 id="player-title" class="font-bold text-sm md:text-lg truncate">No Song</h4>
                 <p id="player-artist" class="text-xs md:text-sm text-slate-400 truncate">-</p>

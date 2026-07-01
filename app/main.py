@@ -10,7 +10,7 @@ import time
 
 import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
@@ -112,6 +112,15 @@ async def get_song_browser():
 @app.get("/songs.json")
 async def get_songs_json():
     return SONGS
+
+@app.get("/manifest.json")
+def get_manifest():
+    return FileResponse(os.path.join(static_dir, "manifest.json"))
+
+@app.get("/sw.js")
+def get_sw():
+    headers = {"Service-Worker-Allowed": "/"}
+    return FileResponse(os.path.join(static_dir, "sw.js"), headers=headers)
 
 def open_browser(port):
     time.sleep(1.5)
