@@ -54,12 +54,12 @@
         
         .spinning-record { animation: spin 12s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .tab-content { transition: all 0.3s ease; }
+        .tab-content { transition: all 0.3s ease; padding-bottom: 2rem; }
+        body.player-visible .tab-content { padding-bottom: 10rem; }
         .hidden { display: none !important; opacity: 0; transform: translateY(10px); }
         .loader { width: 48px; height: 48px; border: 3px solid #7c3aed; border-bottom-color: transparent; border-radius: 50%; display: inline-block; box-sizing: border-box; animation: rotation 1s linear infinite; }
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        body.player-visible main { padding-bottom: calc(var(--player-height) + 3rem); }
         body.player-visible .app-sidebar { padding-bottom: calc(var(--player-height) + 1.5rem); }
         #player-bar { left: var(--sidebar-width); min-height: var(--player-height); }
         #results-list { padding-bottom: calc(var(--player-height) + 2.5rem); }
@@ -71,8 +71,9 @@
             body { flex-direction: column; }
             .app-sidebar { display: none !important; }
             .mobile-nav { display: flex !important; }
-            main { flex: 1; padding: 1rem 1rem 8rem 1rem !important; }
-            body.player-visible main { padding-bottom: 14rem !important; }
+            main { flex: 1; padding: 1rem !important; }
+            .tab-content { padding-bottom: 8rem !important; }
+            body.player-visible .tab-content { padding-bottom: 14rem !important; }
             #player-bar { left: 0 !important; right: 0 !important; bottom: 4rem !important; border-top: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
             #player-bar.keyboard-hidden { display: none !important; }
             .mobile-nav.keyboard-hidden { display: none !important; }
