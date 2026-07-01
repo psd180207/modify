@@ -2,7 +2,9 @@ const CACHE_NAME = 'moodify-aura-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/songs.json',
-  '/static/logo.jpeg',
+  '/static/logo-192.png',
+  '/static/logo-512.png',
+  '/static/favicon.png',
   'https://cdn.tailwindcss.com',
   'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;600;800;900&display=swap'
