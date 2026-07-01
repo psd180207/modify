@@ -47,4 +47,4 @@ The application computes scores based on closeness, overlap, and penalties to ma
 Face Sync requires webcam permissions. To perform emotion detection locally without external API calls, this project utilizes `OpenCV` and `DeepFace`. The engine will temporarily turn on your webcam to read your expression.
 
 ## Demo
-*Demo GIF/Live Link coming soon.*
+website link : https://modify-s9hc.onrender.com

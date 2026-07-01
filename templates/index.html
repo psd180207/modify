@@ -122,9 +122,9 @@
             <button onclick="showTab('Results')" class="nav-link w-full text-left px-4 md:px-5 py-3 md:py-4 rounded-2xl transition flex items-center gap-4 text-slate-400 hover:text-white group text-sm md:text-base">
                 <span class="text-lg md:text-xl">★</span> <span>Results</span>
             </button>
-            <a href="/song-browser" class="w-full text-left px-4 md:px-5 py-3 md:py-4 rounded-2xl transition flex items-center gap-4 text-slate-400 hover:text-white hover:bg-white/5 group text-sm md:text-base">
+            <button onclick="showTab('Library')" class="nav-link w-full text-left px-4 md:px-5 py-3 md:py-4 rounded-2xl transition flex items-center gap-4 text-slate-400 hover:text-white group text-sm md:text-base">
                 <span class="text-lg md:text-xl">☷</span> <span>Library</span>
-            </a>
+            </button>
         </nav>
 
         <div class="mt-8 p-4 md:p-6 rounded-3xl bg-white/5 border border-white/5 text-center text-xs md:text-sm">
@@ -330,6 +330,70 @@
             </div>
         </section>
 
+        <!-- LIBRARY -->
+        <section id="Library" class="tab-content hidden space-y-6 md:space-y-10">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                <div>
+                    <h2 class="text-3xl md:text-4xl font-black">Browse <span class="text-violet-400">Library</span></h2>
+                    <p class="text-slate-500 mt-2 text-sm md:text-base">Explore all tracks in our collection with real-time filters.</p>
+                </div>
+                <div class="text-left md:text-right glass px-4 py-2 rounded-2xl border border-white/5 flex-shrink-0">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Matching Tracks</p>
+                    <p class="text-2xl font-black text-white"><span id="match-count">0</span> <span class="text-xs text-slate-500 font-bold">/ <span id="total-count">0</span></span></p>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="glass p-6 md:p-8 rounded-[2rem] space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="space-y-2 col-span-1 md:col-span-2">
+                        <label class="block text-[10px] text-slate-500 font-bold uppercase tracking-widest">Search title or artist</label>
+                        <input id="search-input" type="search" placeholder="Search songs, artists, genres..." class="w-full glass bg-transparent p-3 md:p-4 rounded-2xl focus:outline-none focus:border-violet-500 placeholder:text-slate-600 text-xs md:text-sm">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-[10px] text-slate-500 font-bold uppercase tracking-widest">Genre</label>
+                        <select id="genre-filter" class="w-full glass bg-slate-950 p-3 md:p-4 rounded-2xl focus:outline-none focus:border-violet-500 appearance-none text-xs md:text-sm">
+                            <option value="">All Genres</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="space-y-2">
+                        <label class="block text-[10px] text-slate-500 font-bold uppercase tracking-widest">Language</label>
+                        <select id="language-filter" class="w-full glass bg-slate-950 p-3 md:p-4 rounded-2xl focus:outline-none focus:border-violet-500 appearance-none text-xs md:text-sm">
+                            <option value="">All Languages</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-[10px] text-slate-500 font-bold uppercase tracking-widest">Primary Emotion</label>
+                        <select id="emotion-filter" class="w-full glass bg-slate-950 p-3 md:p-4 rounded-2xl focus:outline-none focus:border-violet-500 appearance-none text-xs md:text-sm">
+                            <option value="">Any Emotion</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-[10px] text-slate-500 font-bold uppercase tracking-widest">Release Era</label>
+                        <select id="era-filter" class="w-full glass bg-slate-950 p-3 md:p-4 rounded-2xl focus:outline-none focus:border-violet-500 appearance-none text-xs md:text-sm">
+                            <option value="">Any Era</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-[10px] text-slate-500 font-bold uppercase tracking-widest">Mood Tag</label>
+                        <select id="mood-filter" class="w-full glass bg-slate-950 p-3 md:p-4 rounded-2xl focus:outline-none focus:border-violet-500 appearance-none text-xs md:text-sm">
+                            <option value="">Any Tag</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Song List Grid -->
+            <div id="songs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+            <div id="empty-state" class="hidden glass p-12 rounded-[2rem] text-center text-slate-500">
+                <p class="text-lg font-bold text-white">No songs match these filters.</p>
+                <p class="mt-2 text-xs md:text-sm">Clear some filters or broaden your search to see more recommendations.</p>
+            </div>
+        </section>
+
     </main>
 
     <!-- MOBILE BOTTOM NAV -->
@@ -354,29 +418,28 @@
             <span>★</span>
             <span>Results</span>
         </button>
-        <button onclick="window.location.href='/song-browser'" class="nav-btn" data-tab="Library">
+        <button onclick="showTab('Library')" class="nav-btn" data-tab="Library">
             <span>☷</span>
             <span>Library</span>
         </button>
     </nav>
 
     <!-- STICKY PLAYER -->
-    <div id="player-bar" class="fixed bottom-0 right-0 glass border-t border-white/10 p-3 md:p-4 transform translate-y-full transition-transform duration-500 z-50 flex flex-col sm:flex-row items-center justify-between bg-[#08090d]/95 shadow-[0_-18px_60px_rgba(0,0,0,0.35)] w-full gap-3 md:gap-0">
-        <div class="flex items-center gap-3 md:gap-4 w-full sm:w-1/3 min-w-0">
-            <div id="player-art" class="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center text-xl md:text-2xl shadow-lg shadow-violet-500/20 flex-shrink-0">♫</div>
-            <div class="overflow-hidden whitespace-nowrap flex-1 min-w-0">
+    <div id="player-bar" class="fixed bottom-0 right-0 glass border-t border-white/10 p-3 md:p-4 transform translate-y-full transition-transform duration-500 z-50 flex items-center justify-between bg-[#08090d]/95 shadow-[0_-18px_60px_rgba(0,0,0,0.35)] w-full gap-4">
+        <!-- Left: Art & Title -->
+        <div class="flex items-center gap-3 md:gap-4 min-w-0 max-w-[50%]">
+            <div id="player-art" class="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center text-xl md:text-2xl shadow-lg shadow-violet-500/20 flex-shrink-0">♫</div>
+            <div class="overflow-hidden whitespace-nowrap min-w-0">
                 <h4 id="player-title" class="font-bold text-sm md:text-lg truncate">No Song</h4>
                 <p id="player-artist" class="text-xs md:text-sm text-slate-400 truncate">-</p>
             </div>
         </div>
-        <div class="flex items-center gap-3 md:gap-6 justify-center w-full sm:w-1/3">
-            <button onclick="prevSong()" class="text-2xl md:text-3xl text-slate-400 hover:text-white transition active:scale-90">⏮</button>
-            <div class="text-[10px] font-black tracking-[0.2em] text-violet-400 opacity-80 uppercase px-3 md:px-4 py-2 border border-violet-500/20 rounded-full bg-violet-500/10 whitespace-nowrap text-xs">Popup Player</div>
-            <button onclick="nextSong()" class="text-2xl md:text-3xl text-slate-400 hover:text-white transition active:scale-90">⏭</button>
-        </div>
-        <div class="w-full sm:w-1/3 flex justify-end items-center pr-0 sm:pr-4 gap-2 md:gap-4">
-             <a id="yt-link-btn" href="#" target="_blank" class="hidden w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center hover:bg-violet-600 transition shadow-xl text-xl" title="Open in YouTube Music">🔗</a>
-             <div class="text-[10px] uppercase text-slate-500 font-black tracking-widest hidden md:block">Aura Queue</div>
+        <!-- Center/Right Controls -->
+        <div class="flex items-center gap-3 md:gap-6 flex-shrink-0">
+            <button onclick="prevSong()" class="text-2xl md:text-3xl text-slate-400 hover:text-white transition active:scale-90" aria-label="Previous Song">⏮</button>
+            <div class="hidden sm:inline-block text-[10px] font-black tracking-[0.2em] text-violet-400 opacity-80 uppercase px-3 md:px-4 py-2 border border-violet-500/20 rounded-full bg-violet-500/10 whitespace-nowrap text-xs">Popup Player</div>
+            <button onclick="nextSong()" class="text-2xl md:text-3xl text-slate-400 hover:text-white transition active:scale-90" aria-label="Next Song">⏭</button>
+            <a id="yt-link-btn" href="#" target="_blank" class="hidden w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center hover:bg-violet-600 transition shadow-xl text-xl animate-pulse" title="Open in YouTube Music">🔗</a>
         </div>
     </div>
 
@@ -908,24 +971,26 @@
                 
                 const resultHTML = `
                     <div class="glass p-4 md:p-8 rounded-[1.5rem] md:rounded-[3rem] hover:bg-white/[0.05] hover:scale-[1.01] transition-all group border-white/5 hover:border-violet-500/20 animate-fade-in-up" style="animation-delay: ${(i % 10) * 0.05}s">
-                        <div class="flex items-center gap-4 md:gap-10 cursor-pointer flex-col sm:flex-row" onclick="playSong(${i})">
-                            <div class="text-2xl md:text-4xl font-black text-white/10 group-hover:text-violet-500/50 transition">#${i+1}</div>
-                            <div class="w-16 md:w-20 h-16 md:h-20 glass bg-gradient-to-br from-violet-500/20 to-transparent rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center text-2xl md:text-3xl group-hover:rotate-12 transition group-hover:bg-violet-500/40 flex-shrink-0">♫</div>
-                            <div class="flex-1 min-w-0 text-center sm:text-left">
-                                <h4 class="text-lg md:text-2xl font-bold tracking-tight truncate">${escapeHtml(song.title)}</h4>
-                                <p class="text-slate-400 mt-1 truncate text-xs md:text-base">${escapeHtml(song.artists.join(', '))} • <span class="text-violet-400/80">${escapeHtml(song.genre)}</span></p>
+                        <div class="flex items-center gap-3 md:gap-10 cursor-pointer w-full" onclick="playSong(${i})">
+                            <div class="hidden sm:block text-2xl md:text-4xl font-black text-white/10 group-hover:text-violet-500/50 transition">#${i+1}</div>
+                            <div class="w-12 h-12 md:w-20 md:h-20 glass bg-gradient-to-br from-violet-500/20 to-transparent rounded-xl md:rounded-[2rem] flex items-center justify-center text-xl md:text-3xl group-hover:rotate-12 transition group-hover:bg-violet-500/40 flex-shrink-0">♫</div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-base md:text-2xl font-bold tracking-tight truncate">${escapeHtml(song.title)}</h4>
+                                <p class="text-slate-400 mt-0.5 truncate text-[11px] md:text-base">${escapeHtml(song.artists.join(', '))} • <span class="text-violet-400/80">${escapeHtml(song.genre)}</span></p>
                             </div>
-                            <div class="text-right mr-0 sm:mr-4 w-full sm:w-auto">
-                                <div class="text-2xl md:text-3xl font-black text-emerald-400">${adjustedScore}%</div>
-                                <div class="text-[10px] uppercase text-slate-500 font-black tracking-widest mt-1">${feedback ? 'Tuned' : 'Match'}</div>
+                            <div class="text-right flex-shrink-0">
+                                <div class="text-lg md:text-3xl font-black text-emerald-400">${adjustedScore}%</div>
+                                <div class="text-[9px] uppercase text-slate-500 font-black tracking-widest mt-0.5">${feedback ? 'Tuned' : 'Match'}</div>
                             </div>
-                            <button class="w-14 md:w-16 h-14 md:h-16 bg-white/5 rounded-2xl flex items-center justify-center group-hover:bg-violet-600 transition shadow-xl active:scale-90 text-lg md:text-xl pointer-events-none flex-shrink-0">▶</button>
                         </div>
-                        <div class="mt-4 md:mt-6 flex flex-wrap items-center gap-2 md:gap-3 pl-0 sm:pl-0 md:pl-36">
-                            <button onclick="toggleBreakdown(${i})" class="px-4 md:px-5 py-2 md:py-3 rounded-2xl bg-white/5 hover:bg-violet-600/30 text-xs md:text-sm font-bold text-slate-300 hover:text-white transition">Why?</button>
-                            <button onclick="sendFeedback(${i}, 1)" class="w-10 md:w-12 h-10 md:h-12 rounded-2xl bg-white/5 hover:bg-emerald-500/20 text-base md:text-lg transition" title="More like this">👍</button>
-                            <button onclick="sendFeedback(${i}, -1)" class="w-10 md:w-12 h-10 md:h-12 rounded-2xl bg-white/5 hover:bg-rose-500/20 text-base md:text-lg transition" title="Less like this">👎</button>
-                            <span class="text-xs uppercase tracking-[0.2em] text-slate-600 font-black">${feedback > 0 ? 'Boosted' : feedback < 0 ? 'Lowered' : ''}</span>
+                        <div class="mt-3 md:mt-6 flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <button onclick="toggleBreakdown(${i})" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-violet-600/30 text-[10px] md:text-sm font-bold text-slate-300 hover:text-white transition">Why?</button>
+                                <button onclick="sendFeedback(${i}, 1)" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-emerald-500/20 text-xs md:text-lg transition" title="More like this">👍</button>
+                                <button onclick="sendFeedback(${i}, -1)" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-rose-500/20 text-xs md:text-lg transition" title="Less like this">👎</button>
+                                <span class="text-[10px] uppercase tracking-[0.2em] text-slate-600 font-black">${feedback > 0 ? 'Boosted' : feedback < 0 ? 'Lowered' : ''}</span>
+                            </div>
+                            <button onclick="playSong(${i})" class="sm:hidden px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-bold transition">Play</button>
                         </div>
                         <div id="breakdown-${i}" class="hidden mt-5 ml-0 md:ml-36 grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 text-sm">
                             ${formatBreakdown(item.breakdown)}
@@ -967,9 +1032,189 @@
             renderList(STATE.currentPlaylist, STATE.currentlyShowing);
         }
 
+        // ===== LIBRARY MANAGEMENT (SPA Integration) =====
+        STATE.librarySongs = [];
+        STATE.libraryFilters = {
+            search: '',
+            genre: '',
+            language: '',
+            emotion: '',
+            era: '',
+            mood: ''
+        };
+
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        // Live manual tuning auto-update
+        function setupManualTuningListeners() {
+            const debouncedGetManualResults = debounce(getManualResults, 250);
+            
+            ['energy', 'valence', 'speed', 'danceability'].forEach(id => {
+                const el = getElement(id);
+                if (el) el.addEventListener('input', debouncedGetManualResults);
+            });
+            
+            ['genre', 'time', 'language', 'era', 'context', 'activity'].forEach(id => {
+                const el = getElement(id);
+                if (el) el.addEventListener('change', getManualResults);
+            });
+            
+            const artistEl = getElement('artist');
+            if (artistEl) artistEl.addEventListener('input', debouncedGetManualResults);
+        }
+
+        function uniqueValues(items) {
+            return Array.from(new Set(items)).sort((a, b) => a.localeCompare(b));
+        }
+
+        function populateSelect(select, values, defaultLabel) {
+            select.innerHTML = `<option value="">${defaultLabel}</option>` + 
+                values.map(val => `<option value="${val}">${capitalize(val)}</option>`).join('');
+        }
+
+        function capitalize(value) {
+            return String(value).replace(/\b\w/g, char => char.toUpperCase());
+        }
+
+        function renderLibraryFilters() {
+            const genres = uniqueValues(STATE.librarySongs.map(s => s.genre).filter(Boolean));
+            const languages = uniqueValues(STATE.librarySongs.map(s => s.language).filter(Boolean));
+            const emotions = uniqueValues(STATE.librarySongs.map(s => s.primary_emotion).filter(Boolean));
+            const eras = uniqueValues(STATE.librarySongs.map(s => s.release_era).filter(Boolean));
+            const moods = uniqueValues(STATE.librarySongs.flatMap(s => s.mood_tags || []).filter(Boolean));
+
+            populateSelect(getElement('genre-filter'), genres, 'All Genres');
+            populateSelect(getElement('language-filter'), languages, 'All Languages');
+            populateSelect(getElement('emotion-filter'), emotions, 'Any Emotion');
+            populateSelect(getElement('era-filter'), eras, 'Any Era');
+            populateSelect(getElement('mood-filter'), moods, 'Any Tag');
+        }
+
+        function filterLibrarySongs() {
+            const search = String(STATE.libraryFilters.search || '').toLowerCase();
+            const filtered = STATE.librarySongs.filter(song => {
+                const title = String(song.title || '').toLowerCase();
+                const artistNames = String((song.artists || []).join(' ')).toLowerCase();
+                const genre = String(song.genre || '').toLowerCase();
+                const language = String(song.language || '').toLowerCase();
+                const emotion = String(song.primary_emotion || '').toLowerCase();
+                const era = String(song.release_era || '').toLowerCase();
+                const moods = String((song.mood_tags || []).join(' ')).toLowerCase();
+
+                const searchMatch = !search || title.includes(search) || artistNames.includes(search) || genre.includes(search) || language.includes(search);
+                const genreMatch = !STATE.libraryFilters.genre || genre === STATE.libraryFilters.genre.toLowerCase();
+                const languageMatch = !STATE.libraryFilters.language || language === STATE.libraryFilters.language.toLowerCase();
+                const emotionMatch = !STATE.libraryFilters.emotion || emotion === STATE.libraryFilters.emotion.toLowerCase();
+                const eraMatch = !STATE.libraryFilters.era || era === STATE.libraryFilters.era.toLowerCase();
+                const moodMatch = !STATE.libraryFilters.mood || moods.includes(STATE.libraryFilters.mood.toLowerCase());
+
+                return searchMatch && genreMatch && languageMatch && emotionMatch && eraMatch && moodMatch;
+            });
+
+            setText(getElement('match-count'), filtered.length);
+            getElement('empty-state').classList.toggle('hidden', filtered.length !== 0);
+            renderLibrarySongCards(filtered);
+        }
+
+        function playLibrarySong(index) {
+            const song = STATE.librarySongs[index];
+            if (!song) return;
+            STATE.currentPlaylist = [{
+                song: song,
+                score: 100,
+                breakdown: {}
+            }];
+            playSong(0);
+        }
+
+        function renderLibrarySongCards(songs) {
+            const grid = getElement('songs-grid');
+            setHTML(grid, songs.map((song, i) => {
+                const artists = (song.artists || []).join(', ');
+                const moodTags = (song.mood_tags || []).slice(0, 3).map(tag => `<span class="px-2 py-0.5 rounded-full bg-white/5 text-[10px] font-semibold text-slate-400">${capitalize(tag)}</span>`).join(' ');
+                
+                // Find matching index of the song in the loaded array to reference it for playback
+                const globalIndex = STATE.librarySongs.indexOf(song);
+
+                return `
+                <article class="glass rounded-[1.5rem] p-5 hover:bg-white/[0.05] transition-all duration-300 border-white/5 hover:border-violet-500/20 flex flex-col justify-between h-full">
+                    <div>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="text-[9px] uppercase tracking-[0.2em] text-violet-400 font-bold">${capitalize(song.primary_emotion || 'Neutral')}</p>
+                                <h3 class="mt-1.5 text-lg font-bold text-white truncate" title="${escapeHtml(song.title)}">${escapeHtml(song.title)}</h3>
+                                <p class="mt-1 text-xs text-slate-400 truncate">${escapeHtml(artists)}</p>
+                            </div>
+                            <div class="text-right text-[10px] text-slate-500 leading-4 flex-shrink-0">
+                                <p class="font-semibold text-violet-300/80">${capitalize(song.genre || '')}</p>
+                                <p class="mt-0.5">${capitalize(song.language || '')}</p>
+                                <p class="mt-0.5">${song.release_era || ''}</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex flex-wrap gap-1.5">${moodTags}</div>
+                    </div>
+                    <div class="mt-5 pt-4 border-t border-white/5 flex items-center justify-between gap-3">
+                        <button onclick="playLibrarySong(${globalIndex})" class="bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                            <span>▶</span> Play
+                        </button>
+                        <a href="${song.yt_music_link || '#'}" target="_blank" class="text-[10px] text-slate-400 hover:text-white transition uppercase font-black tracking-widest">
+                            YT Music 🔗
+                        </a>
+                    </div>
+                </article>`;
+            }).join(''));
+        }
+
+        function attachLibraryEventListeners() {
+            const searchEl = getElement('search-input');
+            if (searchEl) {
+                searchEl.addEventListener('input', e => {
+                    STATE.libraryFilters.search = e.target.value;
+                    filterLibrarySongs();
+                });
+            }
+            ['genre', 'language', 'emotion', 'era', 'mood'].forEach(key => {
+                const el = getElement(`${key}-filter`);
+                if (el) {
+                    el.addEventListener('change', e => {
+                        STATE.libraryFilters[key] = e.target.value;
+                        filterLibrarySongs();
+                    });
+                }
+            });
+        }
+
+        async function loadLibrarySongs() {
+            try {
+                const response = await fetch('/songs.json');
+                STATE.librarySongs = await response.json();
+                setText(getElement('total-count'), STATE.librarySongs.length);
+                renderLibraryFilters();
+                filterLibrarySongs();
+                attachLibraryEventListeners();
+            } catch (error) {
+                console.error('Error loading library songs:', error);
+                setHTML(getElement('songs-grid'), '<div class="col-span-full rounded-2xl bg-red-500/10 border border-red-500/20 p-6 text-center text-red-100 text-sm">Unable to load library. Please refresh the page.</div>');
+            }
+        }
+
         // ===== INITIALIZATION =====
         document.addEventListener('DOMContentLoaded', () => {
-            showTab('Home');
+            const hash = window.location.hash.replace('#', '');
+            const allowedTabs = ['Home', 'Manual', 'Prompt', 'Detect', 'Results', 'Library'];
+            if (hash && allowedTabs.includes(hash)) {
+                showTab(hash);
+            } else {
+                showTab('Home');
+            }
+            setupManualTuningListeners();
+            loadLibrarySongs();
             
             // Prevent unwanted scrolling
             document.body.style.overflow = 'hidden';

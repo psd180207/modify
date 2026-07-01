@@ -10,7 +10,7 @@ import time
 
 import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
@@ -105,13 +105,9 @@ async def get_index(request: Request):
     except Exception as e:
         return HTMLResponse(content=f"<h1>Error: templates/index.html not found: {e}</h1>", status_code=404)
 
-@app.get("/song-browser", response_class=HTMLResponse)
-async def get_song_browser(request: Request):
-    try:
-        html = templates.get_template("song_browser.html").render({"request": request})
-        return HTMLResponse(content=html)
-    except Exception as e:
-        return HTMLResponse(content=f"<h1>Error: templates/song_browser.html not found: {e}</h1>", status_code=404)
+@app.get("/song-browser")
+async def get_song_browser():
+    return RedirectResponse(url="/#Library")
 
 @app.get("/songs.json")
 async def get_songs_json():
