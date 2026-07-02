@@ -1,0 +1,13 @@
+{
+  "name": "desktop-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "tauri": "tauri",
+    "icon": "tauri icon ../static/logo-512.png"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

@@ -2,11 +2,28 @@
   "name": "Moodify Aura Music Recommender",
   "short_name": "Moodify Aura",
   "description": "Smart ambient music recommender tailored to your mood and face emotions.",
+  "id": "/",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#08090d",
   "theme_color": "#08090d",
   "orientation": "portrait-primary",
+  "categories": [
+    "music",
+    "entertainment"
+  ],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "screenshots": [
+    {
+      "src": "/static/image.png",
+      "sizes": "1744x1111",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Moodify Aura Recommender Interface"
+    }
+  ],
   "icons": [
     {
       "src": "/static/logo-192.png",
